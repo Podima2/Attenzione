@@ -1,7 +1,7 @@
-version: "3"
 services:
   graph-node:
     image: graphprotocol/graph-node:v0.37.0
+    platform: linux/amd64               # 👈 Added
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -21,14 +21,18 @@ services:
       GRAPH_LOG: info
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
   ipfs:
     image: ipfs/go-ipfs:v0.34.1
+    platform: linux/amd64               # 👈 Added
     ports:
       - "5001:5001"
     volumes:
-      - ./data/ipfs:/data/ipfs
+      - ipfs_data:/data/ipfs
+
   postgres:
     image: postgres
+    platform: linux/amd64               # 👈 Added
     ports:
       - "5432:5432"
     command:
@@ -42,4 +46,8 @@ services:
       POSTGRES_DB: graph-node
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ipfs_data:
+  postgres_data:

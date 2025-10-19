@@ -1,35 +1,117 @@
-import { BigInt, Address } from "@graphprotocol/graph-ts";
+import { BigInt, BigDecimal } from "@graphprotocol/graph-ts";
 import {
-  YourContract,
-  GreetingChange,
-} from "../generated/YourContract/YourContract";
-import { Greeting, Sender } from "../generated/schema";
+  StationCreated,
+  CrimeReportSubmitted,
+  AnonymousReportSubmitted,
+} from "../generated/CrimeRegistry/CrimeRegistry";
+import { Station, CrimeReport, DailyAggregation } from "../generated/schema";
 
-export function handleGreetingChange(event: GreetingChange): void {
-  let senderString = event.params.greetingSetter.toHexString();
+export function handleStationCreated(event: StationCreated): void {
+  let stationId = event.params.stationId.toString()
+  let station = new Station(stationId)
+  
+  station.stationId = stationId.toString()
+  station.name = event.params.name
+  station.metro = event.params.metro
+  station.lines = ""
+  station.lineOrder = BigInt.zero()
+  station.active = true
+  station.createdAt = event.block.timestamp
+  station.reportCount = BigInt.zero()
+  station.save()
+}
 
-  let sender = Sender.load(senderString);
+export function handleCrimeReportSubmitted(event: CrimeReportSubmitted): void {
+  let reportId = event.params.reportId.toString()
+  let stationId = event.params.stationId
+  let report = new CrimeReport(reportId)
 
-  if (sender === null) {
-    sender = new Sender(senderString);
-    sender.address = event.params.greetingSetter;
-    sender.createdAt = event.block.timestamp;
-    sender.greetingCount = BigInt.fromI32(1);
-  } else {
-    sender.greetingCount = sender.greetingCount.plus(BigInt.fromI32(1));
+  report.reportId = event.params.reportId
+  report.station = stationId
+  report.stationId = stationId
+  report.reporter = event.params.reporter.toHexString()
+  report.severity = event.params.severity
+  report.cid = event.params.cid
+  report.description = ""
+  report.timestamp = event.block.timestamp
+  report.verified = event.params.verified
+  report.save()
+
+  let station = Station.load(stationId)
+  if (station) {
+    station.reportCount = station.reportCount.plus(BigInt.fromI32(1))
+    station.save()
   }
 
-  let greeting = new Greeting(
-    event.transaction.hash.toHex() + "-" + event.logIndex.toString()
-  );
+  updateDailyAggregation(
+    stationId,
+    event.block.timestamp,
+    event.params.severity as i32
+  )
+}
 
-  greeting.greeting = event.params.newGreeting;
-  greeting.sender = senderString;
-  greeting.premium = event.params.premium;
-  greeting.value = event.params.value;
-  greeting.createdAt = event.block.timestamp;
-  greeting.transactionHash = event.transaction.hash.toHex();
+export function handleAnonymousReportSubmitted(
+  event: AnonymousReportSubmitted
+): void {
+  let reportId = event.params.reportId.toString()
+  let stationId = event.params.stationId
+  let report = new CrimeReport(reportId)
 
-  greeting.save();
-  sender.save();
+  report.reportId = event.params.reportId
+  report.station = stationId
+  report.stationId = stationId
+  report.reporter = null
+  report.severity = event.params.severity
+  report.cid = event.params.cid
+  report.description = ""
+  report.timestamp = event.block.timestamp
+  report.verified = false
+  report.save()
+
+  let station = Station.load(stationId)
+  if (station) {
+    station.reportCount = station.reportCount.plus(BigInt.fromI32(1))
+    station.save()
+  }
+
+  updateDailyAggregation(
+    stationId,
+    event.block.timestamp,
+    event.params.severity as i32
+  )
+}
+
+function updateDailyAggregation(
+  stationId: string,
+  timestamp: BigInt,
+  severity: i32
+): void {
+  let dayTimestamp = timestamp.div(BigInt.fromI32(86400)).times(BigInt.fromI32(86400))
+  let aggregationId = stationId + "-" + dayTimestamp.toString()
+
+  let aggregation = DailyAggregation.load(aggregationId)
+  if (!aggregation) {
+    aggregation = new DailyAggregation(aggregationId)
+    aggregation.stationId = stationId
+    aggregation.date = dayTimestamp
+    aggregation.reportCount = BigInt.zero()
+    aggregation.avgSeverity = BigInt.zero().toBigDecimal()
+    aggregation.highestSeverity = 0
+  }
+
+  aggregation.reportCount = aggregation.reportCount.plus(BigInt.fromI32(1))
+  
+  if (severity > aggregation.highestSeverity) {
+    aggregation.highestSeverity = severity
+  }
+  
+  let currentAvg = aggregation.avgSeverity
+  let newCount = aggregation.reportCount
+  let severityDecimal = BigInt.fromI32(severity).toBigDecimal()
+  
+  let oldTotal = currentAvg.times(newCount.minus(BigInt.fromI32(1)).toBigDecimal())
+  let newTotal = oldTotal.plus(severityDecimal)
+  aggregation.avgSeverity = newTotal.div(newCount.toBigDecimal())
+  
+  aggregation.save()
 }

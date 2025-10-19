@@ -19,7 +19,9 @@
     "lint": "eslint",
     "lint-staged": "eslint",
     "test": "REPORT_GAS=true hardhat test --network hardhat",
-    "verify": "hardhat etherscan-verify"
+    "verify": "hardhat etherscan-verify",
+    "update-subgraph": "node scripts/update-subgraph.js",
+    "deploy-all": "yarn deploy --reset && yarn update-subgraph && cd ../subgraph && yarn remove-local && yarn create-local && yarn abi-copy && yarn codegen && yarn build && yarn deploy-local"
   },
   "dependencies": {
     "@inquirer/password": "^4.0.2",

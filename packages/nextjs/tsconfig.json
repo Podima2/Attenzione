@@ -14,8 +14,14 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    
+    // FIX 1: Set the base directory for path resolution (the 'nextjs' folder)
+    "baseUrl": ".",
+    
+    // FIX 2: Define the '@' alias to point to the base directory ('.')
     "paths": {
-      "~~/*": ["./*"]
+      "~~/*": ["./*"],
+      "@/*": ["./*"]
     },
     "plugins": [
       {
