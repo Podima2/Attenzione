@@ -1,26 +1,32 @@
 specVersion: 0.0.4
-description: Greetings
+description: Crime Registry Subgraph
 repository: https://github.com/scaffold-eth/se-2/packages/subgraph/
 schema:
   file: ./src/schema.graphql
 dataSources:
   - kind: ethereum/contract
-    name: YourContract
-    network: localhost
+    name: CrimeRegistry
+    network: base-sepolia
     source:
-      abi: YourContract
-      address: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+      abi: CrimeRegistry
+      address: "0x41a479d7a8B0E8fEA445d0e454FD614F191Be997"
+      startBlock: 0
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.6
+      apiVersion: 0.0.8
       language: wasm/assemblyscript
       entities:
-        - Greeting
-        - Sender
+        - Station
+        - CrimeReport
+        - DailyAggregation
       abis:
-        - name: YourContract
-          file: ./abis/localhost_YourContract.json
+        - name: CrimeRegistry
+          file: ./abis/localhost_CrimeRegistry.json
       eventHandlers:
-        - event: GreetingChange(indexed address,string,bool,uint256)
-          handler: handleGreetingChange
+        - event: StationCreated(string,string,string)
+          handler: handleStationCreated
+        - event: CrimeReportSubmitted(indexed uint256,string,indexed address,uint8,uint256,bool,string)
+          handler: handleCrimeReportSubmitted
+        - event: AnonymousReportSubmitted(indexed uint256,string,uint8,uint256,string)
+          handler: handleAnonymousReportSubmitted
       file: ./src/mapping.ts

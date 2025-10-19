@@ -2,6 +2,15 @@
   "localhost": {
     "YourContract": {
       "address": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    },
+    "CrimeRegistry": {
+      "address": "0xA21DDc1f17dF41589BC6A5209292AED2dF61Cc94"
+    },
+    "MockENSRegistry": {
+      "address": "0x4ff1f64683785E0460c24A4EF78D582C2488704f"
+    },
+    "StationFactory": {
+      "address": "0x0F527785e39B22911946feDf580d87a4E00465f0"
     }
   }
 }

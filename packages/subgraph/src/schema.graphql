@@ -1,17 +1,52 @@
-type Greeting @entity(immutable:true) {
+type Station @entity(immutable: false) {
   id: ID!
-  sender: Sender!
-  greeting: String!
-  premium: Boolean
-  value: BigInt
+  stationId: String! @index
+  name: String!
+  metro: String! @index
+  lines: String! # Comma-separated line codes
+  lineOrder: BigInt!
+  active: Boolean!
   createdAt: BigInt!
-  transactionHash: String!
+  reports: [CrimeReport!]! @derivedFrom(field: "station")
+  reportCount: BigInt! # Total reports at this station
 }
 
-type Sender @entity(immutable:true) {
+type CrimeReport @entity(immutable: true) {
   id: ID!
-  address: Bytes!
-  greetings: [Greeting!] @derivedFrom(field: "sender")
-  createdAt: BigInt!
-  greetingCount: BigInt!
+  reportId: BigInt! @index
+  station: Station! @index
+  stationId: String!
+  reporter: String # Address, or null for anonymous
+  severity: Int!
+  description: String!
+  timestamp: BigInt! @index
+  verified: Boolean!
+  cid: String!
+}
+
+type MetroStats @entity(immutable: false) {
+  id: ID!
+  metro: String! @index
+  totalStations: BigInt!
+  totalReports: BigInt!
+  avgSeverity: BigDecimal!
+  lastUpdated: BigInt!
+}
+
+type LineStats @entity(immutable: false) {
+  id: ID!
+  line: String! @index
+  metro: String!
+  totalStations: BigInt!
+  totalReports: BigInt!
+  avgSeverity: BigDecimal!
+}
+
+type DailyAggregation @entity(immutable: false) {
+  id: ID!
+  stationId: String! @index
+  date: BigInt! @index
+  reportCount: BigInt!
+  avgSeverity: BigDecimal!
+  highestSeverity: Int!
 }
